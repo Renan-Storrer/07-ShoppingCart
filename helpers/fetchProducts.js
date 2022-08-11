@@ -5,8 +5,8 @@ const fetchProducts = async (productType) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    error.message = 'You must provide an url';
-    return error;
+    const erroMensagem = 'You must provide an url';
+    return erroMensagem;
   }
 };
 
