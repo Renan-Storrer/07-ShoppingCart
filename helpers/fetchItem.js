@@ -1,16 +1,9 @@
-const fetchItem = async (item) => {
-  try {
-    if (item === undefined) {
-      throw new Error('You must provide an url');
-    } else {
-      const url = `https://api.mercadolibre.com/items/${item}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      return data;
-    }
-  } catch (error) {
-    return error;
-  }
+const fetchItem = async (query) => {
+  if (!query) throw new Error('You must provide an url');
+  const ENDPOINT = `https://api.mercadolibre.com/items/${query}`;
+  const response = await fetch(ENDPOINT);
+  const data = await response.json();
+  return data;
 };
 
 if (typeof module !== 'undefined') {
