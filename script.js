@@ -83,8 +83,19 @@ const addEventClearButton = () => {
   });
 };
 
+const addLoading = () => {
+  sectionItems.appendChild(createCustomElement('span', 'loading', 'carregando...'));
+};
+
+const removeLoading = () => {
+  const getLoading = document.querySelector('.loading');
+  getLoading.remove();
+};
+
 window.onload = async () => {
+  addLoading();
   await startItems('computador');
   await addEventOnButtons();
   await addEventClearButton();
+  removeLoading();
 };
