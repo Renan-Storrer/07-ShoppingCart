@@ -93,9 +93,9 @@ const removeLoading = () => {
 };
 
 window.onload = async () => {
-  addLoading();
   await startItems('computador');
   await addEventOnButtons();
   await addEventClearButton();
+  addLoading();
   removeLoading();
 };
