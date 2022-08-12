@@ -1,22 +1,6 @@
-const sectionItems = document.querySelector('.items');
-const sectionCart = document.querySelector('.cart__items');
-const btnEmptyCart = document.querySelector('.empty-cart');
-const totalValueCart = document.querySelector('.total-price');
-
-const totalValue = () => {
-  const itemsInCart = sectionCart.children;
-  let finalTotalValue = 0;
-  let sumValue = 0;
-  if (itemsInCart.length > 0) {
-    for (index = 0; index < itemsInCart.length; index += 1) {
-      const myArray = itemsInCart[index].innerText.split('$');
-      const currValue = parseFloat(myArray[1]);
-      sumValue += currValue;
-      finalTotalValue = (sumValue);
-    }
-  }
-  totalValueCart.innerText = finalTotalValue.toString();
-};
+const cart = document.getElementsByClassName('cart__items')[0];
+const itemsFromCart = document.getElementsByClassName('cart__item');
+const priceTag = document.getElementsByClassName('total-price')[0];
 
 const createProductImageElement = (imageSource) => {
   const img = document.createElement('img');
@@ -24,27 +8,45 @@ const createProductImageElement = (imageSource) => {
   img.src = imageSource;
   return img;
 };
+
 const createCustomElement = (element, className, innerText) => {
   const e = document.createElement(element);
   e.className = className;
   e.innerText = innerText;
   return e;
 };
+
 const createProductItemElement = ({ sku, name, image }) => {
   const section = document.createElement('section');
   section.className = 'item';
+  
   section.appendChild(createCustomElement('span', 'item__sku', sku));
   section.appendChild(createCustomElement('span', 'item__title', name));
   section.appendChild(createProductImageElement(image));
   section.appendChild(createCustomElement('button', 'item__add', 'Adicionar ao carrinho!'));
+  
   return section;
 };
+
 const getSkuFromProductItem = (item) => item.querySelector('span.item__sku').innerText;
+
+const totalCart = async () => {
+  if (itemsFromCart.length === 0) {
+    priceTag.innerText = '0.00';
+  } else {
+    let sum = 0;
+    for (let i = 0; i < itemsFromCart.length; i += 1) {
+      const price = Number(itemsFromCart[i].innerText.split('$')[1]);
+      sum += price;
+    }
+    priceTag.innerText = sum.toString();
+  }
+};
 
 const cartItemClickListener = (event) => {
   event.target.remove();
-  totalValue();
-  saveCartItems(sectionCart.innerHTML);
+  saveCartItems(cart.innerHTML);
+  totalCart();
 };
 
 const createCartItemElement = ({ sku, name, salePrice }) => {
@@ -54,47 +56,50 @@ const createCartItemElement = ({ sku, name, salePrice }) => {
   li.addEventListener('click', cartItemClickListener);
   return li;
 };
-const addProducsToPage = async () => {
-  const response = await fetchProducts('computador');
-  response.forEach((element) => {
-    const myObject = { sku: element.id, name: element.title, image: element.thumbnail };
-    const item = createProductItemElement(myObject);
-    sectionItems.appendChild(item);
+
+const fillWithResults = async () => {
+  const sectionItems = document.getElementsByClassName('items')[0];
+  const objSearch = await fetchProducts('computador');
+  const arrayProducts = objSearch.results;
+  arrayProducts.forEach((product) => {
+    const { id: sku, title: name, thumbnail: image } = product;
+    const prod = createProductItemElement({ sku, name, image });
+    sectionItems.appendChild(prod);
   });
 };
-const addProducsToCart = async (producId) => {
-  const selectProduct = await fetchItem(producId);
-  const { id, title, price } = selectProduct;
-  const productObject = { sku: id, name: title, salePrice: price };
-  const cartItem = createCartItemElement(productObject);
-  sectionCart.appendChild(cartItem);
-};
-sectionItems.addEventListener('click', async (produ) => {
-  const sku = getSkuFromProductItem(produ.target.parentNode);
-  await addProducsToCart(sku);
-  saveCartItems(sectionCart.innerHTML);
-  totalValue();
-});
 
-const getLocalStorageInfo = () => {
-  const getProducts = getSavedCartItems();
-  if (getProducts.length > 0) {
-    sectionCart.innerHTML = getProducts;
-    const savedCart = sectionCart.children;
-    for (let index = 0; index < savedCart.length; index += 1) {
-      savedCart[index].addEventListener('click', cartItemClickListener);
-    }
-    totalValue();
+const eventForAddToCartButtons = async () => {
+  const btns = document.querySelectorAll('.item__add');
+  btns.forEach((button) => {
+    button.addEventListener('click', async (event) => {
+      const pElement = event.target.parentElement;
+      const skuID = getSkuFromProductItem(pElement);
+      const itemInfo = await fetchItem(skuID);
+      const { id: sku, title: name, price: salePrice } = itemInfo;
+      const productToCart = createCartItemElement({ sku, name, salePrice });
+      totalCart();
+      cart.appendChild(productToCart);
+      saveCartItems(cart.innerHTML);
+    });
+  });
+};
+
+const reAddEventToCartItens = () => {
+  for (let i = 0; i < itemsFromCart.length; i += 1) {
+    itemsFromCart[i].addEventListener('click', cartItemClickListener);
   }
 };
 
-btnEmptyCart.addEventListener('click', () => {
-  sectionCart.innerHTML = '';
-  saveCartItems(sectionCart.innerHTML);
-  totalValue();
-});
+const recoverCartLocalStorage = async () => {
+  const cartList = await getSavedCartItems();
+  cart.innerHTML = cartList;
+};
 
 window.onload = async () => { 
-  await addProducsToPage();
-  await getLocalStorageInfo();
+  await fillWithResults();
+  await eventForAddToCartButtons();
+  // await eventClearCartButton();
+  await recoverCartLocalStorage();
+  await reAddEventToCartItens();
+  await totalCart(); 
 };
